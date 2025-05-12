@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.3",
+    "chart.js": "^4.4.9",
+    "connect-flash": "^0.1.1",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-ejs-layouts": "^2.5.1",
+    "express-session": "^1.18.1",
+    "html-pdf": "^3.0.1",
+    "pdfkit": "^0.13.0",
+    "chart.js": "^4.0.0",
+    "regression": "^2.0.1"
+  }
+}

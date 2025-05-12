@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/custom.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            Finance Manager
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/" class="sidebar-nav-item <%= title === 'Dashboard' ? 'active' : '' %>">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </a>
+            <a href="/add" class="sidebar-nav-item <%= title === 'Add Transaction' ? 'active' : '' %>">
+                <i class="fas fa-plus"></i>
+                Add Transaction
+            </a>
+            <a href="/summary" class="sidebar-nav-item <%= title === 'Summary' ? 'active' : '' %>">
+                <i class="fas fa-chart-bar"></i>
+                Summary
+            </a>
+            <a href="/budget" class="sidebar-nav-item <%= title === 'Budget Planning' ? 'active' : '' %>">
+                <i class="fas fa-wallet"></i>
+                Budget Planning
+            </a>
+            <a href="/about" class="sidebar-nav-item <%= title === 'About' ? 'active' : '' %>">
+                <i class="fas fa-info-circle"></i>
+                About
+            </a>
+        </nav>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-profile">
+            <div class="profile-name">
+                <%= user ? user.name : 'Guest' %>
+            </div>
+            <div class="header-actions">
+                <i class="fas fa-cog header-icon"></i>
+                <a href="/logout" class="header-icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container my-4">
+            <% if(success_msg != ''){ %>
+                <div class="alert alert-success"><%= success_msg %></div>
+            <% } %>
+
+            <% if(error_msg != ''){ %>
+                <div class="alert alert-danger"><%= error_msg %></div>
+            <% } %>
+
+            <% if(error != ''){ %>
+                <div class="alert alert-danger"><%= error %></div>
+            <% } %>
+
+            <%- body %>
+        </div>
+    </main>
+
+    <%- include('../partials/footer') %>
+
+    <script>
+        <!-- Bootstrap JS -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    </script>
+</body>
+</html>
