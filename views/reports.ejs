@@ -1,34 +1,309 @@
 <div class="container mt-5">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="text-center mb-4">Financial Reports</h1>
-            
-            <!-- Report Type Selection -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <select class="form-select" id="reportType">
-                                <option value="monthly">Monthly Report</option>
-                                <option value="yearly">Yearly Report</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <input type="month" class="form-control" id="monthPicker">
-                            <input type="number" class="form-control" id="yearPicker" min="2020" max="2099">
-                        </div>
-                        <div class="col-md-4">
-                            <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
-                            <button class="btn btn-secondary" onclick="downloadPDF()">Download PDF</button>
+    <h1 class="text-center mb-4">Financial Reports</h1>
+
+    <!-- Report Generation Controls -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Generate a New Report
+        </div>
+        <div class="card-body">
+            <form id="report-form">
+                <div class="row g-3 align-items-end">
+                    <!-- Report Type -->
+                    <div class="col-md-3">
+                        <label for="reportType" class="form-label">Report Type</label>
+                        <select class="form-select" id="reportType">
+                            <option value="monthly" selected>Monthly Summary</option>
+                            <option value="yearly">Yearly Trends</option>
+                            <option value="range">Custom Date Range</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Date Inputs -->
+                    <div class="col-md-6">
+                        <div id="date-inputs">
+                            <!-- Monthly -->
+                            <div class="date-input-group" id="monthly-group">
+                                <label for="monthPicker" class="form-label">Select Month</label>
+                                <input type="month" class="form-control" id="monthPicker" name="month">
+                            </div>
+                            <!-- Yearly -->
+                            <div class="date-input-group" id="yearly-group" style="display: none;">
+                                <label for="yearPicker" class="form-label">Select Year</label>
+                                <input type="number" class="form-control" id="yearPicker" name="year" placeholder="YYYY" min="2000" max="2100">
+                            </div>
+                            <!-- Date Range -->
+                            <div class="date-input-group" id="range-group" style="display: none;">
+                                <div class="row">
+                                    <div class="col">
+                                        <label for="startDate" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+                                    <div class="col">
+                                        <label for="endDate" class="form-label">End Date</label>
+                                        <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Report Content -->
-            <div id="reportContent">
-                <!-- Will be populated dynamically -->
-            </div>
+                    <!-- Submit Button -->
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">Generate Report</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Report Content Area -->
+    <div id="report-content" class="mt-4">
+        <!-- Reports will be dynamically injected here -->
+        <div class="text-center text-muted">
+            <p>Please select a report type and date to get started.</p>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const reportTypeSelect = document.getElementById('reportType');
+        const dateInputGroups = {
+            monthly: document.getElementById('monthly-group'),
+            yearly: document.getElementById('yearly-group'),
+            range: document.getElementById('range-group')
+        };
+
+        // Function to show/hide date inputs based on selection
+        function toggleDateInputs() {
+            // Hide all groups
+            for (const key in dateInputGroups) {
+                dateInputGroups[key].style.display = 'none';
+            }
+            // Show the selected group
+            const selectedType = reportTypeSelect.value;
+            if (dateInputGroups[selectedType]) {
+                dateInputGroups[selectedType].style.display = 'block';
+            }
+        }
+
+        // Initial call to set the correct view
+        toggleDateInputs();
+
+        // Add event listener for changes
+        reportTypeSelect.addEventListener('change', toggleDateInputs);
+
+        // Handle form submission
+        const reportForm = document.getElementById('report-form');
+        reportForm.addEventListener('submit', async function(e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const reportContent = document.getElementById('report-content');
+            reportContent.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+            const formData = new FormData(reportForm);
+            const reportType = document.getElementById('reportType').value;
+            
+            const body = {
+                reportType: reportType,
+                month: formData.get('month'),
+                year: formData.get('year'),
+                startDate: formData.get('startDate'),
+                endDate: formData.get('endDate')
+            };
+
+            try {
+                const response = await fetch('/api/reports', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (reportType === 'monthly') {
+                        renderMonthlyReport(result.data, { type: 'month', value: body.month });
+                    } else if (reportType === 'yearly') {
+                        renderYearlyReport(result.data, body.year);
+                    } else if (reportType === 'range') {
+                        renderMonthlyReport(result.data, { type: 'range', start: body.startDate, end: body.endDate });
+                    }
+                } else {
+                    reportContent.innerHTML = `<div class="alert alert-danger">${result.message || 'Failed to generate report.'}</div>`;
+                }
+
+            } catch (error) {
+                console.error('Error fetching report:', error);
+                reportContent.innerHTML = `<div class="alert alert-danger">An error occurred while generating the report.</div>`;
+            }
+        });
+
+        function renderMonthlyReport(data, period) {
+            const reportContent = document.getElementById('report-content');
+            if (!data || !data.summary) {
+                reportContent.innerHTML = `<div class="alert alert-warning">No data available for the selected period.</div>`;
+                return;
+            }
+
+            const { summary, expenseDistribution, transactions } = data;
+            
+            let title = '';
+            if (period.type === 'month') {
+                const monthDate = new Date(period.value + '-02');
+                title = `Monthly Report for ${monthDate.toLocaleString('default', { month: 'long', year: 'numeric' })}`;
+            } else {
+                const start = new Date(period.start).toLocaleDateString();
+                const end = new Date(period.end).toLocaleDateString();
+                title = `Report for ${start} to ${end}`;
+            }
+
+            // Helper to format currency
+            const formatCurrency = (amount) => `$${parseFloat(amount).toFixed(2)}`;
+
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3>${title}</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Summary Metrics -->
+                        <div class="row text-center mb-4">
+                            <div class="col-md-4">
+                                <div class="card card-body card-income"><h5 class="card-title">Total Income</h5><p class="card-text fs-4">${formatCurrency(summary.totalIncome)}</p></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body card-expense"><h5 class="card-title">Total Expenses</h5><p class="card-text fs-4">${formatCurrency(summary.totalExpense)}</p></div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card card-body card-balance"><h5 class="card-title">Net Savings</h5><p class="card-text fs-4">${formatCurrency(summary.netSavings)}</p></div>
+                            </div>
+                        </div>
+
+                        <!-- Chart and Transaction Table -->
+                        <div class="row">
+                            <div class="col-md-5">
+                                <h5>Expense Distribution</h5>
+                                <canvas id="expense-pie-chart"></canvas>
+                            </div>
+                            <div class="col-md-7">
+                                <h5>Transactions</h5>
+                                <div class="table-responsive" style="max-height: 400px;">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            ${transactions.map(t => `
+                                                <tr>
+                                                    <td>${new Date(t.date).toLocaleDateString()}</td>
+                                                    <td><span class="badge bg-${t.type === 'income' ? 'success' : 'danger'}">${t.type}</span></td>
+                                                    <td>${t.description}</td>
+                                                    <td class="text-end">${formatCurrency(t.amount)}</td>
+                                                </tr>
+                                            `).join('')}
+                                            ${transactions.length === 0 ? '<tr><td colspan="4" class="text-center">No transactions found.</td></tr>' : ''}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            reportContent.innerHTML = html;
+
+            // Render the chart
+            if (expenseDistribution && expenseDistribution.length > 0) {
+                const ctx = document.getElementById('expense-pie-chart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: expenseDistribution.map(item => item.category),
+                        datasets: [{
+                            data: expenseDistribution.map(item => item.total),
+                            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderYearlyReport(data, year) {
+            const reportContent = document.getElementById('report-content');
+            if (!data || !data.monthlyTrends) {
+                reportContent.innerHTML = `<div class="alert alert-warning">No data available for the selected year.</div>`;
+                return;
+            }
+
+            const { monthlyTrends } = data;
+
+            let html = `
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Yearly Trends for ${year}</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="yearly-trends-chart"></canvas>
+                    </div>
+                </div>
+            `;
+            reportContent.innerHTML = html;
+
+            // Render the chart
+            const ctx = document.getElementById('yearly-trends-chart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthlyTrends.map(d => d.month),
+                    datasets: [
+                        {
+                            label: 'Total Income',
+                            data: monthlyTrends.map(d => d.totalIncome),
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Total Expense',
+                            data: monthlyTrends.map(d => d.totalExpense),
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) { return '$' + value; }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>

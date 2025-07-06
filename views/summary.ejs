@@ -10,7 +10,7 @@
 
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card">
+            <div class="card card-income">
                 <div class="card-body">
                     <h4><i class="fas fa-arrow-down text-success me-2"></i>Income</h4>
                     <p class="text-success">$<%= income.toFixed(2) %></p>
@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card">
+            <div class="card card-expense">
                 <div class="card-body">
                     <h4><i class="fas fa-arrow-up text-danger me-2"></i>Expenses</h4>
                     <p class="text-danger">$<%= expenses.toFixed(2) %></p>
@@ -26,10 +26,57 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card">
+            <div class="card card-balance">
                 <div class="card-body">
                     <h4><i class="fas fa-balance-scale me-2"></i>Balance</h4>
                     <p class="<%= balance >= 0 ? 'text-success' : 'text-danger' %>">$<%= balance.toFixed(2) %></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- Left: Expense Distribution with date range filter -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Expense Distribution</h5>
+                    <form method="GET" action="/summary" class="mb-3">
+                        <div class="row">
+                            <div class="col">
+                                <label for="startDate" class="form-label">Start Date:</label>
+                                <input type="date" name="startDate" id="startDate" class="form-control" value="<%= typeof startDate !== 'undefined' ? startDate : '' %>">
+                            </div>
+                            <div class="col">
+                                <label for="endDate" class="form-label">End Date:</label>
+                                <input type="date" name="endDate" id="endDate" class="form-control" value="<%= typeof endDate !== 'undefined' ? endDate : '' %>">
+                            </div>
+                            <div class="col-auto d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary">Filter</button>
+                            </div>
+                        </div>
+                    </form>
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Right: Budget vs Actual with month picker -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Budget vs Actual</h5>
+                    <form method="GET" action="/summary" class="mb-3">
+                        <div class="row">
+                            <div class="col">
+                                <label for="barChartMonth" class="form-label">Select Month:</label>
+                                <input type="month" name="barChartMonth" id="barChartMonth" class="form-control" value="<%= typeof barChartMonth !== 'undefined' ? barChartMonth : '' %>" required>
+                            </div>
+                            <div class="col-auto d-flex align-items-end">
+                                <button type="submit" class="btn btn-secondary">View Month</button>
+                            </div>
+                        </div>
+                    </form>
+                    <canvas id="budgetChart"></canvas>
                 </div>
             </div>
         </div>
@@ -53,3 +100,43 @@
         </div>
     </div>
 </div>
+
+<script>
+    // These variables are now guaranteed by the server to be safe to use
+    const expenseChartData = <%- JSON.stringify(expenseData) %>;
+    const barChartData = <%- JSON.stringify(barChartData) %>;
+
+    // Expense Pie Chart
+    if (document.getElementById('expenseChart') && expenseChartData && expenseChartData.length > 0) {
+        new Chart(document.getElementById('expenseChart'), {
+            type: 'pie',
+            data: {
+                labels: expenseChartData.map(item => item.category),
+                datasets: [{
+                    data: expenseChartData.map(item => parseFloat(item.total || 0)),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    // Budget vs Actual Bar Chart
+    if (document.getElementById('budgetChart') && barChartData && barChartData.labels.length > 0) {
+        new Chart(document.getElementById('budgetChart'), {
+            type: 'bar',
+            data: {
+                labels: barChartData.labels,
+                datasets: [
+                    { label: 'Budget', data: barChartData.budget, backgroundColor: '#36A2EB' },
+                    { label: 'Actual', data: barChartData.actual, backgroundColor: '#FF6384' }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    }
+</script>

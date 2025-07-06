@@ -20,6 +20,10 @@
                         <input type="text" class="form-control" id="description" name="description" required>
                     </div>
                     <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date" name="date" value="<%= typeof today !== 'undefined' ? today : '' %>" required>
+                    </div>
+                    <div class="mb-3">
                         <label for="category" class="form-label">Category</label>
                         <select class="form-select" id="category" name="category" required>
                             <!-- Categories will be populated by JavaScript -->
@@ -33,6 +37,8 @@
 </div>
 
 <script>
+    const serverCategories = <%- JSON.stringify(typeof categories !== 'undefined' ? categories : []) %>;
+
     const categories = {
         income: [
             'Salary',
@@ -46,24 +52,7 @@
             'Refunds',
             'Other Income'
         ],
-        expense: [
-            'Food & Dining',
-            'Transportation',
-            'Housing & Rent',
-            'Utilities',
-            'Healthcare',
-            'Entertainment',
-            'Shopping',
-            'Education',
-            'Bills & Payments',
-            'Insurance',
-            'Travel',
-            'Groceries',
-            'Personal Care',
-            'Gifts & Donations',
-            'Business Expenses',
-            'Other Expenses'
-        ]
+        expense: serverCategories
     };
 
     function updateCategories() {
